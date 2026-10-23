@@ -50,6 +50,13 @@ header.top{padding:28px 0 18px}
 .brand{display:flex; align-items:baseline; gap:12px; margin-bottom:16px}
 .brand h1{margin:0; font-size:44px; font-weight:700; letter-spacing:-.5px; line-height:1}
 .brand p{margin:0; color:var(--muted); font-size:15px}
+#installBtn{margin-inline-start:auto; align-self:center}
+.ext{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; margin-top:20px}
+.ext h3{margin:0 0 4px; font-size:17px}
+.ext p{margin:4px 0 10px; color:var(--muted); font-size:14px}
+.ext .bar{margin-top:8px}
+.bm{cursor:grab}
+a.btn{text-decoration:none; display:inline-block}
 .grab{
   display:flex; gap:8px; background:var(--surface); border:2px solid var(--brand);
   border-radius:14px; padding:6px; box-shadow:var(--shadow);
@@ -157,6 +164,7 @@ video,audio{width:100%; border-radius:10px; background:#000; max-height:60vh}
 @media (max-width:560px){
   .brand h1{font-size:36px}
   .brand{flex-direction:column; align-items:flex-start; gap:4px}
+  #installBtn{margin-inline-start:0; align-self:flex-start; margin-top:6px}
   .item .row{flex-wrap:wrap}
   .actions{width:100%; justify-content:flex-start}
   .grab .btn{padding:10px 14px}
@@ -169,6 +177,10 @@ video,audio{width:100%; border-radius:10px; background:#000; max-height:60vh}
     <div class="brand">
       <h1>سحّاب</h1>
       <p>نزّل أي ملف بعدة اتصالات، وأكمل من حيث توقفت.</p>
+      <button class="btn ghost small" id="installBtn" hidden>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 7v7M9 11l3 3 3-3"/></svg>
+        ثبّت التطبيق
+      </button>
     </div>
     <form class="grab" id="grabForm" autocomplete="off">
       <button type="button" class="iconbtn" id="pasteBtn" title="لصق الرابط" aria-label="لصق الرابط">
@@ -247,7 +259,18 @@ video,audio{width:100%; border-radius:10px; background:#000; max-height:60vh}
       <button class="btn ghost" id="clearDone">احذف الملفات المكتملة</button>
       <button class="btn ghost" id="clearAll" style="color:var(--danger)">احذف كل شيء</button>
     </div>
-    <p class="about">سحّاب — من أعمال لوجيكال كود، الموصل. الإصدار 1.0<br>
+    <div class="ext">
+      <h3>زر التنزيل في كروم وإيدج</h3>
+      <p>إضافة تُظهر زر «نزّل بسحّاب» فوق أي فيديو، وتلتقط روابط الملفات من الصفحات، وتضيف خياراً عند النقر بالزر الأيمن.</p>
+      <div class="bar"><a class="btn" href="sahhab-extension.zip" download>نزّل الإضافة</a><button class="btn ghost" id="extHelp">طريقة التثبيت</button></div>
+    </div>
+    <div class="ext">
+      <h3>زر سحّاب في سفاري والآيفون</h3>
+      <p>رابط صغير تضعه في المفضلة. وأنت في أي صفحة فيها فيديو، اضغطه فيرسل روابطها إلى سحّاب.</p>
+      <div class="bar"><a class="btn bm" id="bmLink" href="#">سحّاب ⤓</a><button class="btn ghost" id="bmCopy">انسخ الرابط</button><button class="btn ghost" id="bmHelp">طريقة الإضافة</button></div>
+      <p style="margin-top:10px">في الحاسوب: اسحب زر «سحّاب ⤓» إلى شريط المفضلة.</p>
+    </div>
+    <p class="about">سحّاب — من أعمال لوجيكال كود، الموصل. الإصدار 1.1<br>
     لا يدعم المنصات التي تحمي محتواها مثل يوتيوب ونتفليكس وشاهد.</p>
   </section>
 </div>
@@ -1055,6 +1078,60 @@ $('#pasteBtn').onclick = async () => {
   catch (e){ $('#urlInput').focus(); toast('الصق الرابط يدوياً في الخانة'); }
 };
 
+/* ---------- تثبيت التطبيق ---------- */
+let installEvt = null;
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; if (!isStandalone()) $('#installBtn').hidden = false; });
+window.addEventListener('appinstalled', () => { $('#installBtn').hidden = true; installEvt = null; toast('ثُبّت سحّاب على جهازك'); });
+if (!isStandalone() && (isIOS() || /safari/i.test(navigator.userAgent) && !/chrome|crios|android/i.test(navigator.userAgent))) $('#installBtn').hidden = false;
+function helpDlg(title, html){
+  $('#addBody').innerHTML = `<h2>${title}</h2>${html}<div class="btns"><button class="btn" data-close>حسناً</button></div>`;
+  $('#addBody [data-close]').onclick = () => $('#addDlg').close();
+  $('#addDlg').showModal();
+}
+$('#installBtn').onclick = async () => {
+  if (installEvt){ installEvt.prompt(); const r = await installEvt.userChoice.catch(() => ({})); if (r.outcome === 'accepted') $('#installBtn').hidden = true; installEvt = null; return; }
+  if (isIOS()) helpDlg('ثبّت سحّاب على الآيفون', `<ol style="padding-inline-start:20px;line-height:2">
+    <li>افتح هذه الصفحة في متصفح سفاري.</li>
+    <li>اضغط زر المشاركة في أسفل الشاشة، وهو مربع يخرج منه سهم.</li>
+    <li>انزل واختر «إضافة إلى الشاشة الرئيسية».</li>
+    <li>اضغط «إضافة» في الأعلى.</li></ol>`);
+  else helpDlg('ثبّت سحّاب', `<ol style="padding-inline-start:20px;line-height:2">
+    <li>في سفاري على الماك: من قائمة «ملف» اختر «إضافة إلى Dock».</li>
+    <li>في كروم أو إيدج: افتح قائمة المتصفح، ثم اختر «تثبيت سحّاب».</li></ol>`);
+};
+
+/* ---------- إضافة المتصفح ورابط المفضلة ---------- */
+const APP_URL = location.origin + location.pathname.replace(/index\.html$/, '');
+const BOOKMARKLET = "javascript:(()=>{const A='" + APP_URL + "';const s=new Set();document.querySelectorAll('video,audio,source').forEach(v=>{const u=v.currentSrc||v.src;if(u&&/^https?:/.test(u))s.add(u)});performance.getEntriesByType('resource').forEach(e=>{if(/\\.(m3u8|mp4|webm|mkv|mov|mp3|m4a|pdf|zip|rar|apk)(\\?|$)/i.test(e.name))s.add(e.name)});const l=[...s].slice(0,30);location.href=A+(l.length?'?list='+encodeURIComponent(l.join('\\n')):'?page='+encodeURIComponent(location.href))})()";
+$('#bmLink').setAttribute('href', BOOKMARKLET);
+$('#bmLink').addEventListener('click', e => { e.preventDefault(); toast('اسحب هذا الزر إلى شريط المفضلة، ولا تضغطه هنا'); });
+$('#bmCopy').onclick = async () => { try { await navigator.clipboard.writeText(BOOKMARKLET); toast('نُسخ الرابط'); } catch (e) { prompt('انسخ هذا الرابط:', BOOKMARKLET); } };
+$('#bmHelp').onclick = () => helpDlg('زر سحّاب في الآيفون', `<ol style="padding-inline-start:20px;line-height:2">
+  <li>اضغط «انسخ الرابط» هنا.</li>
+  <li>في سفاري افتح أي موقع، ثم اضغط زر المشاركة واختر «إضافة إشارة مرجعية».</li>
+  <li>سمّها «سحّاب» واحفظها.</li>
+  <li>افتح الإشارات المرجعية، واضغط «تعديل»، ثم اختر «سحّاب».</li>
+  <li>امسح العنوان الموجود، والصق الرابط المنسوخ مكانه، ثم احفظ.</li>
+  <li>من الآن: وأنت في صفحة فيها فيديو، افتح الإشارات المرجعية واضغط «سحّاب».</li></ol>`);
+$('#extHelp').onclick = () => helpDlg('تثبيت إضافة كروم وإيدج', `<ol style="padding-inline-start:20px;line-height:2">
+  <li>نزّل ملف الإضافة، ثم فك ضغطه في مجلد ثابت لن تحذفه.</li>
+  <li>في كروم اكتب في شريط العنوان: <bdi dir="ltr">chrome://extensions</bdi><br>وفي إيدج: <bdi dir="ltr">edge://extensions</bdi></li>
+  <li>فعّل «وضع المطوّر» في الزاوية.</li>
+  <li>اضغط «تحميل إضافة غير مضغوطة» واختر المجلد.</li>
+  <li>ثبّت أيقونة سحّاب في شريط الأدوات من أيقونة القطعة.</li></ol>`);
+
+/* روابط وصلت من الإضافة أو من زر المفضلة */
+function showList(urls){
+  scanned = urls.filter(u => /^https?:/i.test(u) && !isProtected(u)).map(u => {
+    let ext = ''; try { ext = extOf(new URL(u).pathname); } catch (e) {}
+    const g = groupOf(ext);
+    return {url: u, ext, g: g === 'other' ? 'video' : g, via: false};
+  });
+  switchTab('scan'); showScan();
+}
+
 /* ---------- التشغيل ---------- */
 (async function init(){
   bindSettings();
@@ -1069,8 +1146,11 @@ $('#pasteBtn').onclick = async () => {
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
   // رابط وصل بالمشاركة من تطبيق آخر
   const q = new URLSearchParams(location.search);
+  const listParam = q.get('list'), pageParam = q.get('page');
   const shared = q.get('url') || q.get('text') || q.get('title');
-  if (shared){ history.replaceState(null, '', location.pathname); $('#urlInput').value = shared; handleUrl(shared); }
+  if (listParam){ history.replaceState(null, '', location.pathname); showList(listParam.split('\n')); }
+  else if (pageParam){ history.replaceState(null, '', location.pathname); switchTab('scan'); $('#scanInput').value = pageParam; scan(pageParam); }
+  else if (shared){ history.replaceState(null, '', location.pathname); $('#urlInput').value = shared; handleUrl(shared); }
   pump();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
