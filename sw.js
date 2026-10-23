@@ -1,6 +1,6 @@
 // عامل الخدمة: يحفظ واجهة التطبيق ليعمل بدون إنترنت.
 // لا يتدخل أبداً في طلبات التنزيل نفسها.
-const CACHE = 'sahhab-v1';
+const CACHE = 'sahhab-v2';
 const SHELL = ['./', './index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {
